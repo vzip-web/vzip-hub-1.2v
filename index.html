@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VZiP Interactive Brand & Documentation Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: #1A202C;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #F0F4F8 0%, #E2E8F0 50%, #F0F4F8 100%);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .brand-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        /* === TABS === */
+        .tab-active {
+            border-bottom: 3px solid #06B6D4 !important;
+            color: #0F172A !important;
+            font-weight: 600;
+        }
+
+        #tab-container {
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            gap: 2px;
+            padding-bottom: 4px;
+        }
+
+        #tab-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-bottom: 3px solid transparent;
+        }
+
+        /* === TOAST === */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            background: linear-gradient(135deg, #0F172A, #1E293B);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(.4, 0, .2, 1);
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .pdf-exporting {
+            background-color: white !important;
+        }
+
+        /* === EDITABLE === */
+        [contenteditable="true"] {
+            outline: none;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            border-radius: 4px;
+        }
+
+        [contenteditable="true"]:hover,
+        [contenteditable="true"]:focus {
+            background-color: rgba(6, 182, 212, 0.07);
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.07);
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(6, 182, 212, 0.3);
+            }
+        }
+
+        .anim-up {
+            opacity: 0;
+            animation: fadeInUp 0.7s cubic-bezier(.4, 0, .2, 1) forwards;
+        }
+
+        .anim-up-d1 {
+            animation-delay: 0.1s;
+        }
+
+        .anim-up-d2 {
+            animation-delay: 0.2s;
+        }
+
+        .anim-up-d3 {
+            animation-delay: 0.3s;
+        }
+
+        /* === CARD STYLES === */
+        .card-glass {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .card-glass:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-dark {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        }
+
+        /* === MOBILE BOTTOM NAV === */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 8px 16px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            z-index: 100;
+            justify-content: space-around;
+        }
+
+        .mobile-bottom-nav a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            gap: 4px;
+            transition: color 0.2s;
+            padding: 4px 8px;
+        }
+
+        .mobile-bottom-nav a:hover,
+        .mobile-bottom-nav a:active {
+            color: #06B6D4;
+        }
+
+        .mobile-bottom-nav svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* === FLOATING ACTION BUTTON === */
+        .fab-export {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #06B6D4, #0891B2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 22px;
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+            z-index: 90;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: pulseGlow 3s infinite;
+        }
+
+        .fab-export:active {
+            transform: scale(0.92);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 767px) {
+            .mobile-bottom-nav {
+                display: flex;
+            }
+
+            .fab-export {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            body {
+                padding-bottom: 70px;
+            }
+
+            main {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+                padding-top: 24px !important;
+            }
+
+            main>header h1 {
+                font-size: 1.75rem !important;
+                line-height: 1.2;
+            }
+
+            main>header p {
+                font-size: 0.9rem !important;
+            }
+
+            .section-heading h2 {
+                font-size: 1.5rem !important;
+            }
+
+            /* Invoice and doc templates */
+            .tab-content {
+                padding: 16px !important;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab-content table {
+                font-size: 11px;
+                min-width: 500px;
+            }
+
+            /* Signature grids */
+            .sig-grid {
+                grid-template-columns: 1fr !important;
+                gap: 24px !important;
+            }
+
+            /* Digital preview */
+            #digital-preview {
+                grid-template-columns: 1fr !important;
+            }
+
+            #digital-preview .phone-frame {
+                width: 100% !important;
+                max-width: 280px;
+                margin: 0 auto;
+            }
+
+            /* Cover banner text */
+            .cover-wordmark {
+                font-size: 1.8rem !important;
+            }
+
+            .cover-sub {
+                font-size: 1.2rem !important;
+            }
+
+            .cover-tagline {
+                font-size: 10px !important;
+                gap: 6px !important;
+            }
+
+            .cover-services {
+                font-size: 9px !important;
+                gap: 6px !important;
+            }
+
+            /* Social section */
+            .social-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Invoice flex */
+            .invoice-header-flex {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+
+            .invoice-bill-flex {
+                flex-direction: column !important;
+                gap: 16px !important;
+            }
+
+            .invoice-bill-flex>div {
+                width: 100% !important;
+                padding: 0 !important;
+            }
+
+            .invoice-totals {
+                width: 100% !important;
+            }
+
+            /* Proposal signature */
+            .proposal-sig-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Agreement sig */
+            .agreement-sig-flex {
+                flex-direction: column !important;
+                gap: 24px !important;
+            }
+
+            .agreement-sig-flex>div {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .swatch-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .cover-wordmark {
+                font-size: 1.4rem !important;
+            }
+
+            .cover-sub {
+                font-size: 1rem !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <div id="bg-canvas" class="print:hidden"></div>
+
+    <nav class="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-gray-200/50 print:hidden"
+        style="box-shadow: 0 1px 12px rgba(0,0,0,0.04);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center gap-2.5">
+                    <div
+                        class="w-9 h-9 bg-slate-900 text-[#06B6D4] flex items-center justify-center font-bold font-['Space_Grotesk'] text-xl rounded-lg shadow-md">
+                        V</div>
+                    <span class="font-bold text-xl tracking-tight brand-font">VZiP Hub</span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-gray-500">
+                    <a href="#identity"
+                        class="hover:text-slate-900 transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-[#06B6D4] after:transition-all hover:after:w-full">Identity</a>
+                    <a href="#data"
+                        class="hover:text-slate-900 transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-[#06B6D4] after:transition-all hover:after:w-full">Portfolio
+                        Data</a>
+                    <a href="#templates"
+                        class="hover:text-slate-900 transition-colors relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-[#06B6D4] after:transition-all hover:after:w-full">Doc
+                        Templates</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Bottom Navigation Dock -->
+    <nav class="mobile-bottom-nav print:hidden">
+        <a href="#identity">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path
+                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            Identity
+        </a>
+        <a href="#data">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Portfolio
+        </a>
+        <a href="#templates">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Docs
+        </a>
+    </nav>
+
+    <!-- Floating PDF Export (Mobile) -->
+    <button class="fab-export print:hidden" id="fab-export-pdf" title="Export to PDF">📥</button>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24">
+
+        <header class="text-center max-w-3xl mx-auto space-y-4 print:hidden anim-up">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">Brand & Documentation Architecture
+            </h1>
+            <p class="text-base md:text-lg text-gray-600">An interactive guide establishing the dark, minimalist, and
+                eye-catching
+                visual identity for VZiP's software development, web development, and consulting services.</p>
+        </header>
+
+        <!-- VISUAL IDENTITY SECTION -->
+        <section id="identity" class="space-y-12 print:hidden anim-up anim-up-d1">
+            <div class="border-l-4 border-slate-900 pl-4 section-heading">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900">01. Visual Identity</h2>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">The foundation of VZiP's authentic look. Click any
+                    color swatch to copy
+                    its HEX value. Observe the logo renditions emphasizing minimalist charm.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+
+                <div class="card-glass p-6 sm:p-8 flex flex-col justify-center">
+                    <h3 class="text-lg sm:text-xl font-semibold mb-6 border-b pb-2">Primary Color Palette</h3>
+                    <div class="swatch-grid grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="cursor-pointer group swatch-container" data-color="#0F172A">
+                            <div
+                                class="h-24 bg-[#0F172A] rounded-lg shadow-inner transition-transform transform group-hover:scale-105">
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <p class="font-bold">Obsidian</p>
+                                <p class="text-gray-500 text-xs">#0F172A</p>
+                            </div>
+                        </div>
+                        <div class="cursor-pointer group swatch-container" data-color="#1E293B">
+                            <div
+                                class="h-24 bg-[#1E293B] rounded-lg shadow-inner transition-transform transform group-hover:scale-105">
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <p class="font-bold">Charcoal</p>
+                                <p class="text-gray-500 text-xs">#1E293B</p>
+                            </div>
+                        </div>
+                        <div class="cursor-pointer group swatch-container" data-color="#06B6D4">
+                            <div
+                                class="h-24 bg-[#06B6D4] rounded-lg shadow-inner transition-transform transform group-hover:scale-105">
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <p class="font-bold">Neon Cyan</p>
+                                <p class="text-gray-500 text-xs">#06B6D4</p>
+                            </div>
+                        </div>
+                        <div class="cursor-pointer group swatch-container" data-color="#F1F5F9">
+                            <div
+                                class="h-24 bg-[#F1F5F9] rounded-lg shadow-inner border border-gray-200 transition-transform transform group-hover:scale-105">
+                            </div>
+                            <div class="mt-2 text-sm">
+                                <p class="font-bold">Paper</p>
+                                <p class="text-gray-500 text-xs">#F1F5F9</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="logo-concepts-card"
+                    class="bg-[#0F172A] p-8 rounded-xl shadow-lg text-white flex flex-col justify-center items-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-[250px] h-[250px] opacity-40 pointer-events-none transform translate-x-1/4 -translate-y-1/4"
+                        style="background: radial-gradient(circle, #06B6D4 0%, transparent 70%);"></div>
+                    <div class="absolute bottom-0 left-0 w-[200px] h-[200px] opacity-30 pointer-events-none transform -translate-x-1/4 translate-y-1/4"
+                        style="background: radial-gradient(circle, #A855F7 0%, transparent 70%);"></div>
+
+                    <div class="flex justify-between items-center w-full mb-8 z-10 relative">
+                        <h3 class="text-gray-400 text-sm tracking-widest uppercase">Logo Concepts</h3>
+                        <button id="btn-download-logos"
+                            class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded transition-colors flex items-center gap-1 font-medium"
+                            title="Download as PNG">
+                            📥 Download PNG
+                        </button>
+                    </div>
+
+                    <div class="space-y-12 z-10 w-full flex flex-col items-center">
+                        <div class="text-center group">
+                            <p class="text-xs text-gray-500 mb-2">Primary Dark Wordmark</p>
+                            <div
+                                class="text-5xl font-black tracking-tighter brand-font select-none flex items-baseline justify-center">
+                                V<span class="text-[#06B6D4]">Z</span>iP
+                            </div>
+                        </div>
+
+                        <div class="text-center group w-full border-t border-slate-800 pt-8">
+                            <p class="text-xs text-gray-500 mb-2">Minimalist Monogram</p>
+                            <div
+                                class="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center text-[#0F172A] text-2xl font-black brand-font shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+                                VZ
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Social Media Assets Section -->
+                <div class="col-span-1 md:col-span-2 card-glass p-6 sm:p-8 print:hidden">
+                    <div class="border-l-4 border-[#06B6D4] pl-4 mb-6">
+                        <h3 class="text-xl font-semibold">Social Media Assets</h3>
+                        <p class="text-gray-500 text-sm mt-1">Ready-to-use profile pictures and cover banners for
+                            LinkedIn, Facebook, and Instagram.</p>
+                    </div>
+
+                    <div class="social-grid grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Profile Avatar -->
+                        <div
+                            class="lg:col-span-1 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border border-gray-200">
+                            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-4">Profile Avatar</p>
+
+                            <div id="social-avatar-card"
+                                class="w-48 h-48 bg-[#0F172A] relative overflow-hidden flex items-center justify-center shadow-xl"
+                                style="border-radius: 50%;">
+                                <div class="absolute -top-10 -right-10 w-40 h-40 pointer-events-none z-0"
+                                    style="background: radial-gradient(circle, rgba(6,182,212,0.4) 0%, rgba(6,182,212,0) 70%);">
+                                </div>
+
+                                <div
+                                    class="w-20 h-20 bg-white rounded-xl shadow-lg z-10 flex items-center justify-center">
+                                    <span class="text-[#0F172A] text-4xl font-black brand-font tracking-tighter"
+                                        style="margin-top: 4px; margin-left: 2px;">VZ</span>
+                                </div>
+                            </div>
+
+                            <button id="btn-download-avatar"
+                                class="mt-6 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2">
+                                📥 Download Avatar
+                            </button>
+                        </div>
+
+                        <!-- Cover Banner -->
+                        <div
+                            class="lg:col-span-2 flex flex-col items-center bg-gray-50 p-6 rounded-lg border border-gray-200">
+                            <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-4 w-full text-left">
+                                Cover Banner (LinkedIn/FB)</p>
+                            <div id="social-cover-card"
+                                class="w-full aspect-[4/1] bg-[#0F172A] rounded shadow-xl relative overflow-hidden flex flex-col items-center justify-center p-8">
+
+                                <div class="absolute -top-32 -right-32 w-[500px] h-[500px] pointer-events-none z-0"
+                                    style="background: radial-gradient(circle, rgba(6,182,212,0.3) 0%, rgba(6,182,212,0) 60%);">
+                                </div>
+                                <div class="absolute -bottom-32 -left-32 w-[400px] h-[400px] pointer-events-none z-0"
+                                    style="background: radial-gradient(circle, rgba(168,85,247,0.2) 0%, rgba(168,85,247,0) 60%);">
+                                </div>
+
+                                <div class="z-10 flex flex-col items-center w-full justify-center h-full">
+                                    <div class="text-center w-full" style="line-height: 1;">
+                                        <span
+                                            class="text-5xl font-black tracking-tighter brand-font text-white inline-block">V<span
+                                                class="text-[#06B6D4]">Z</span>iP</span>
+                                        <span
+                                            class="text-4xl font-normal tracking-normal brand-font text-white inline-block ml-2">Develogenz</span>
+                                    </div>
+
+                                    <div class="w-24 h-1 bg-[#06B6D4] mt-4 mb-6 block mx-auto"></div>
+
+                                    <div
+                                        class="flex items-center justify-center gap-3 text-[#06B6D4] font-bold tracking-[0.2em] uppercase text-sm mb-4 w-full">
+                                        <span>Innovate</span>
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#06B6D4]"></div>
+                                        <span>Deploy</span>
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#06B6D4]"></div>
+                                        <span>Grow</span>
+                                    </div>
+
+                                    <div
+                                        class="flex items-center justify-center gap-4 text-xs text-gray-400 font-medium tracking-widest uppercase w-full">
+                                        <span>Software</span>
+                                        <div class="w-1 h-1 rounded-full bg-gray-500"></div>
+                                        <span>Web</span>
+                                        <div class="w-1 h-1 rounded-full bg-gray-500"></div>
+                                        <span>Consulting</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="btn-download-cover"
+                                class="mt-6 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2 self-start">
+                                📥 Download Cover
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PORTFOLIO DATA SECTION -->
+        <section id="data" class="space-y-12 print:hidden">
+            <div class="bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-gray-100">
+                <div class="border-l-4 border-[#06B6D4] pl-4 mb-8">
+                    <h2 class="text-3xl font-bold text-slate-900">02. Operational Portfolio</h2>
+                    <p class="text-gray-600 mt-2">Contextualizing the business. This distribution represents the core
+                        focus areas where the new documentation standards will be applied.</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                    <div class="w-full md:w-1/2">
+                        <div class="chart-container">
+                            <canvas id="portfolioChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 space-y-6">
+                        <h3 class="text-2xl font-bold brand-font text-slate-900">Service Distribution</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            VZiP's operations are divided among three primary pillars. The documentation formats
+                            (invoices, proposals) must be flexible enough to accommodate the distinct billing structures
+                            and project milestones of each division.
+                        </p>
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3">
+                                <span class="text-[#0F172A] text-xl">&#9632;</span>
+                                <div>
+                                    <p class="font-bold text-slate-900">Software Development (45%)</p>
+                                    <p class="text-sm text-gray-500">Complex, milestone-based projects requiring
+                                        detailed technical proposals.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="text-[#06B6D4] text-xl">&#9632;</span>
+                                <div>
+                                    <p class="font-bold text-slate-900">Web Development (35%)</p>
+                                    <p class="text-sm text-gray-500">Agile sprints and retainer-based billing requiring
+                                        clear, frequent invoicing.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <span class="text-[#64748B] text-xl">&#9632;</span>
+                                <div>
+                                    <p class="font-bold text-slate-900">Business Consulting (20%)</p>
+                                    <p class="text-sm text-gray-500">Hourly tracking and strategic agreements needing
+                                        strict legal formatting.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DOCUMENT TEMPLATES SECTION -->
+        <section id="templates" class="space-y-8">
+            <div class="border-l-4 border-slate-900 pl-4 mb-8 print:hidden">
+                <h2 class="text-3xl font-bold text-slate-900">03. Documentation Layouts</h2>
+                <p class="text-gray-600 mt-2">Interactive, manually editable templates applying the "dark minimalistic
+                    charm" to standard business documents. <br><strong>Click any text below to edit it before exporting
+                        to PDF!</strong></p>
+            </div>
+
+            <div
+                class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-200 mb-8 gap-4 pb-2 md:pb-0 print:hidden">
+                <div class="flex flex-wrap" id="tab-container">
+                    <button
+                        class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-slate-900 transition-colors tab-active"
+                        data-target="invoice-preview">Invoice Format</button>
+                    <button
+                        class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-slate-900 transition-colors"
+                        data-target="proposal-preview">Proposal Format</button>
+                    <button
+                        class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-slate-900 transition-colors"
+                        data-target="agreement-preview">Agreement / Contract</button>
+                    <button
+                        class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-slate-900 transition-colors"
+                        data-target="digital-preview">Digital (Email/SMS)</button>
+                    <button
+                        class="tab-btn px-6 py-3 text-sm font-medium text-gray-500 hover:text-slate-900 transition-colors"
+                        data-target="agenda-preview">Meeting Agenda</button>
+                </div>
+                <button id="btn-export-doc-pdf"
+                    class="hidden md:flex items-center gap-2 bg-[#0F172A] hover:bg-slate-800 text-white px-5 py-2.5 rounded-md text-sm font-bold transition-colors whitespace-nowrap mb-2 md:mb-0 shadow-sm">
+                    📥 Export to PDF
+                </button>
+            </div>
+
+            <!-- INVOICE SECTION (EDITABLE) -->
+            <div id="invoice-preview"
+                class="tab-content bg-white p-6 sm:p-8 shadow-md max-w-4xl mx-auto rounded border border-gray-200">
+                <div class="w-full text-slate-900 text-sm font-sans" id="invoice-printable-area">
+                    <div class="flex flex-col items-start mb-6">
+                        <div
+                            class="w-12 h-12 bg-[#0F172A] text-[#06B6D4] flex items-center justify-center font-bold font-['Space_Grotesk'] text-2xl rounded-sm mb-3 shadow-md">
+                            V</div>
+                        <h1 class="text-2xl font-black tracking-tight brand-font text-[#0F172A] mb-1"
+                            contenteditable="true">V.ZiP Develogenz</h1>
+                        <p class="text-[10px] text-[#06B6D4] font-bold tracking-widest uppercase mb-2"
+                            contenteditable="true">Software • Web • Consulting</p>
+                        <div class="text-xs text-gray-600 leading-tight">
+                            <p contenteditable="true">No. 123, Main Street, Negombo, Sri Lanka</p>
+                            <p contenteditable="true">Email: info@vzipdevelogenz.com | +94 77 123 4567</p>
+                            <p contenteditable="true">GST / Reg No: VZ-88990011</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="text-xl font-bold text-slate-900 uppercase tracking-widest brand-font">INVOICE <span
+                                class="text-gray-500 font-mono text-lg" contenteditable="true">#INV-2026-001</span>
+                        </div>
+                        <div class="text-xs font-medium text-gray-600">Date: <span class="font-mono text-slate-900"
+                                contenteditable="true">05/03/2026</span></div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between mb-6 text-xs gap-4 sm:gap-0">
+                        <div class="w-full sm:w-1/2 sm:pr-4">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Bill To:</p>
+                            <p class="font-bold text-slate-900 text-sm" contenteditable="true">Acme Corporation</p>
+                            <p class="text-gray-600 mt-0.5" contenteditable="true">456 Corporate Blvd<br>Business
+                                District, BD 20202</p>
+                        </div>
+                        <div class="w-full sm:w-1/2 sm:pl-4">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Ship To /
+                                Project:</p>
+                            <p class="font-bold text-slate-900 text-sm" contenteditable="true">Project Phoenix</p>
+                            <p class="text-gray-600 mt-0.5" contenteditable="true">Phase 1 Cloud Migration</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full h-0.5 bg-[#06B6D4] mb-1"></div>
+
+                    <table class="w-full text-left text-xs mb-1 table-fixed">
+                        <thead>
+                            <tr class="text-slate-900">
+                                <th class="py-1.5 font-bold uppercase tracking-wider w-1/2 pl-2">Services</th>
+                                <th class="py-1.5 font-bold uppercase tracking-wider text-center w-1/6">Packages</th>
+                                <th class="py-1.5 font-bold uppercase tracking-wider text-right w-1/6">Unit Price</th>
+                                <th class="py-1.5 font-bold uppercase tracking-wider text-right w-1/6 pr-2">Amount</th>
+                            </tr>
+                        </thead>
+                    </table>
+
+                    <div class="w-full h-0.5 bg-[#06B6D4] mb-2"></div>
+
+                    <table class="w-full text-left text-xs mb-2 table-fixed">
+                        <tbody id="invoice-tbody" class="text-gray-700 font-medium transition-opacity duration-500">
+                            <tr class="border-b border-dashed border-gray-200 hover:bg-gray-50">
+                                <td class="py-2.5 pl-2 pr-4 w-1/2 align-top" contenteditable="true">Software Development
+                                    Services</td>
+                                <td class="py-2.5 text-center w-1/6 align-top" contenteditable="true">1</td>
+                                <td class="py-2.5 text-right w-1/6 align-top" contenteditable="true">LKR 450,000.00</td>
+                                <td class="py-2.5 pr-2 text-right text-slate-900 w-1/6 align-top font-semibold"
+                                    contenteditable="true">LKR 450,000.00</td>
+                            </tr>
+                            <tr class="border-b border-dashed border-gray-200 hover:bg-gray-50">
+                                <td class="py-2.5 pl-2 pr-4 w-1/2 align-top" contenteditable="true">Web Development &
+                                    Deployment</td>
+                                <td class="py-2.5 text-center w-1/6 align-top" contenteditable="true">40h</td>
+                                <td class="py-2.5 text-right w-1/6 align-top" contenteditable="true">LKR 15,000.00/hr
+                                </td>
+                                <td class="py-2.5 pr-2 text-right text-slate-900 w-1/6 align-top font-semibold"
+                                    contenteditable="true">LKR 600,000.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="print:hidden flex justify-start mb-4">
+                        <button id="btn-add-invoice-row"
+                            class="text-[10px] font-bold text-[#06B6D4] hover:text-cyan-600 transition-colors uppercase tracking-widest flex items-center gap-1 bg-cyan-50 px-2 py-1 rounded cursor-pointer">
+                            + Add Service
+                        </button>
+                    </div>
+
+                    <div class="w-full h-0.5 bg-[#06B6D4] mb-4"></div>
+
+                    <div class="flex flex-col sm:flex-row justify-end mb-8">
+                        <div class="w-full sm:w-72 text-sm font-medium transition-opacity duration-500"
+                            id="invoice-totals-wrapper">
+                            <div class="flex justify-between text-gray-600 px-4 py-1">
+                                <p>Subtotal</p>
+                                <p id="invoice-subtotal" contenteditable="true">LKR 1,050,000.00</p>
+                            </div>
+                            <div class="flex justify-between text-gray-600 px-4 py-1">
+                                <p>Tax (5%)</p>
+                                <p id="invoice-tax" contenteditable="true">LKR 52,500.00</p>
+                            </div>
+                            <div
+                                class="flex justify-between items-center text-base font-bold text-slate-900 bg-[#06B6D4] p-3 mt-2 shadow-sm">
+                                <p class="uppercase tracking-widest text-[10px] font-black">Grand Total</p>
+                                <p id="invoice-total" contenteditable="true">LKR 1,102,500.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-[10px] text-gray-500 text-center pt-4 mt-6 border-t border-gray-100">
+                        <p class="mb-2 text-slate-600" contenteditable="true">Payment Terms: Due within 15 days | Bank:
+                            Commercial Bank, Acc: 1234567890 | Thank you for choosing V.ZiP!</p>
+                        <p class="font-['Space_Grotesk'] font-bold text-[#0F172A] tracking-[0.3em] uppercase mt-1">
+                            Innovate • Deploy • Grow</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROPOSAL SECTION (EDITABLE) -->
+            <div id="proposal-preview"
+                class="tab-content hide bg-white p-6 sm:p-8 shadow-md max-w-4xl mx-auto rounded border border-gray-200">
+                <div class="w-full text-slate-900 text-sm font-sans" id="proposal-printable-area">
+                    <div class="flex flex-col items-start mb-8 border-b-2 border-[#06B6D4] pb-6">
+                        <div
+                            class="w-16 h-16 bg-[#0F172A] text-[#06B6D4] flex items-center justify-center font-bold font-['Space_Grotesk'] text-3xl rounded-sm mb-4 shadow-md">
+                            V</div>
+                        <h1 class="text-3xl font-black tracking-tight brand-font text-[#0F172A] mb-1"
+                            contenteditable="true">V.ZiP Develogenz</h1>
+                        <p class="text-xs text-[#06B6D4] font-bold tracking-widest uppercase" contenteditable="true">
+                            Executive Corporate Business Proposal</p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between mb-8 bg-slate-50 p-6 rounded border border-gray-100 transition-opacity duration-500 gap-4 sm:gap-0"
+                        id="prop-client-container">
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Prepared For:
+                            </p>
+                            <p class="font-bold text-slate-900 text-lg" id="prop-client-name" contenteditable="true">
+                                [Client Name Here]</p>
+                            <p class="text-gray-700 mt-1 text-xs font-semibold" id="prop-client-rep"
+                                contenteditable="true">[Representative Name Here]</p>
+                            <p class="text-gray-500 text-xs mt-1" id="prop-client-address" contenteditable="true">
+                                [Client Address Here]</p>
+                        </div>
+                        <div class="sm:text-right">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Date:</p>
+                            <p class="font-mono text-slate-900 font-semibold" id="prop-date" contenteditable="true">
+                                05/03/2026</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 transition-opacity duration-500" id="prop-header-container">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-3 brand-font" id="prop-title"
+                            contenteditable="true">Digital Deployment Strategy</h2>
+                        <p class="text-gray-700 leading-relaxed text-sm" id="prop-summary" contenteditable="true">A
+                            comprehensive approach to establish brand identity, social media presence, and strategic
+                            marketing execution to ensure sustainable business growth.</p>
+                    </div>
+
+                    <div class="mb-8">
+                        <h3
+                            class="text-sm font-bold text-[#06B6D4] uppercase tracking-widest mb-4 border-b border-gray-200 pb-2">
+                            Deployment & Execution Tasks (Detailed Scope)</h3>
+                        <table class="w-full text-left text-sm table-fixed">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700">
+                                    <th class="py-2 px-3 font-bold text-xs w-3/4">Deployment Activity</th>
+                                    <th class="py-2 px-3 font-bold text-xs text-right w-1/4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prop-tasks-tbody"
+                                class="divide-y divide-gray-100 transition-opacity duration-500">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-3" contenteditable="true">Business Logo Development & Brand
+                                        Identity</td>
+                                    <td class="py-3 px-3 text-right font-medium text-slate-900" contenteditable="true">
+                                        Included</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-3" contenteditable="true">Business Card Design & Corporate
+                                        Stationery</td>
+                                    <td class="py-3 px-3 text-right font-medium text-slate-900" contenteditable="true">
+                                        Included</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-3" contenteditable="true">Professional Social Media Interface
+                                        Creation</td>
+                                    <td class="py-3 px-3 text-right font-medium text-slate-900" contenteditable="true">
+                                        Included</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="print:hidden flex justify-start mt-2">
+                            <button id="btn-add-proposal-row"
+                                class="text-[10px] font-bold text-[#06B6D4] hover:text-cyan-600 transition-colors uppercase tracking-widest flex items-center gap-1 bg-cyan-50 px-2 py-1 rounded cursor-pointer">
+                                + Add Task
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-12 bg-slate-50 p-5 border-l-4 border-[#06B6D4] transition-opacity duration-500"
+                        id="prop-note-container">
+                        <h4 class="font-bold text-slate-900 text-sm mb-2" contenteditable="true">Client Trust &
+                            Transparency Approach</h4>
+                        <p class="text-xs text-gray-600 leading-relaxed" id="prop-approach" contenteditable="true">Each
+                            task is executed step by step with measurable milestones to ensure clarity, transparency,
+                            and professional accountability. The structured deployment process allows the client to
+                            clearly understand business growth progress and marketing impact.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3
+                            class="text-sm font-bold text-slate-900 uppercase tracking-widest mb-10 border-b border-gray-200 pb-2">
+                            Formal Agreement & Authorization</h3>
+                        <div class="grid grid-cols-3 gap-8">
+                            <div>
+                                <div class="border-b border-slate-400 w-full mb-2 h-8"></div>
+                                <p class="text-xs font-bold text-slate-900" contenteditable="true">VZIP CEO</p>
+                                <p class="text-[10px] text-gray-500 mt-1">Signature / Date</p>
+                            </div>
+                            <div>
+                                <div class="border-b border-slate-400 w-full mb-2 h-8"></div>
+                                <p class="text-xs font-bold text-slate-900" contenteditable="true">VZIP Project Manager
+                                </p>
+                                <p class="text-[10px] text-gray-500 mt-1">Signature / Date</p>
+                            </div>
+                            <div>
+                                <div class="border-b border-slate-400 w-full mb-2 h-8"></div>
+                                <p class="text-xs font-bold text-slate-900" id="prop-sig-client" contenteditable="true">
+                                    Client Authorization</p>
+                                <p class="text-[10px] text-gray-500 mt-1">Signature / Date</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AGREEMENT SECTION (EDITABLE) -->
+            <div id="agreement-preview"
+                class="tab-content hide bg-white p-8 sm:p-12 shadow-md max-w-4xl mx-auto rounded border border-gray-200 font-serif">
+                <div class="text-center mb-10 border-b-2 border-slate-900 pb-6">
+                    <div class="text-2xl font-black tracking-tighter brand-font text-slate-900 mx-auto mb-4 font-sans">
+                        V<span class="text-[#06B6D4]">Z</span>iP</div>
+                    <h2 class="text-xl font-bold uppercase tracking-widest text-slate-900" contenteditable="true">Master
+                        Services Agreement</h2>
+                </div>
+                <div class="space-y-6 text-gray-700 text-sm leading-relaxed text-justify">
+                    <p contenteditable="true">This Master Services Agreement (the "Agreement") is entered into as of
+                        <strong>[Date]</strong>, by and between <strong>VZiP</strong>, having its principal place of
+                        business at 123 Innovation Drive, ("Provider"), and <strong>[Client Name]</strong>, having its
+                        principal place of business at [Client Address] ("Client").
+                    </p>
+
+                    <div id="agreement-clauses">
+                        <div class="clause-block">
+                            <h3 class="font-bold text-slate-900 text-base mt-8" contenteditable="true">1. Services to be
+                                Performed</h3>
+                            <p class="mt-2" contenteditable="true">Provider agrees to perform the services specifically
+                                described in individual Statements of Work ("SOW") executed by both parties from time to
+                                time. Each SOW shall incorporate the terms of this Agreement.</p>
+                        </div>
+                        <div class="clause-block">
+                            <h3 class="font-bold text-slate-900 text-base mt-8" contenteditable="true">2. Compensation
+                                and Payment</h3>
+                            <p class="mt-2" contenteditable="true">Client agrees to pay Provider the fees set forth in
+                                the applicable SOW. Invoices shall be submitted [Monthly/Upon Milestone] and are due net
+                                30 days from the date of invoice. Late payments may incur interest at a rate of 1.5% per
+                                month.</p>
+                        </div>
+                    </div>
+
+                    <div class="print:hidden flex justify-start mt-6">
+                        <button id="btn-add-clause-row"
+                            class="text-[10px] font-bold text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest flex items-center gap-1 bg-slate-100 px-2 py-1 rounded cursor-pointer">
+                            + Add Clause
+                        </button>
+                    </div>
+
+                    <div class="mt-16 pt-8 border-t border-gray-200 flex justify-between gap-12 font-sans">
+                        <div class="w-1/2">
+                            <p class="text-xs text-gray-500 uppercase mb-8" contenteditable="true">For VZiP</p>
+                            <div class="border-b border-slate-900 w-full mb-2"></div>
+                            <p class="text-sm font-bold">Authorized Signature</p>
+                        </div>
+                        <div class="w-1/2">
+                            <p class="text-xs text-gray-500 uppercase mb-8" contenteditable="true">For Client</p>
+                            <div class="border-b border-slate-900 w-full mb-2"></div>
+                            <p class="text-sm font-bold">Authorized Signature</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIGITAL PREVIEW SECTION (EDITABLE) -->
+            <div id="digital-preview" class="tab-content hide grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div class="bg-gray-100 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-4 font-semibold">Email Template Format
+                    </p>
+
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 flex-1">
+                        <div class="bg-[#0F172A] px-6 py-4 flex justify-between items-center">
+                            <div class="text-xl font-black tracking-tighter brand-font text-white">V<span
+                                    class="text-[#06B6D4]">Z</span>iP</div>
+                        </div>
+                        <div class="p-6 space-y-4 text-sm text-gray-600">
+                            <p id="email-subject" class="font-bold text-slate-900" contenteditable="true">Project
+                                Update: Milestone 2 Complete</p>
+                            <p contenteditable="true">Hi Team,</p>
+                            <div id="email-body" class="space-y-4">
+                                <p contenteditable="true">We are pleased to inform you that the backend integration
+                                    phase has been successfully completed ahead of schedule. You can review the staging
+                                    environment at the provided secure link.</p>
+                                <div class="py-4">
+                                    <a href="#"
+                                        class="inline-block bg-[#06B6D4] text-white px-6 py-2 rounded font-medium hover:bg-cyan-600 transition-colors"
+                                        contenteditable="true">Review Staging</a>
+                                </div>
+                            </div>
+                            <p contenteditable="true">Best regards,<br><span class="font-bold text-slate-900">The VZiP
+                                    Dev Team</span></p>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-4 text-xs text-gray-400 text-center border-t border-gray-100 mt-auto"
+                            contenteditable="true">
+                            &copy; 2026 VZiP Services. Confidential Information.
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-gray-100 p-6 rounded-xl border border-gray-200 shadow-inner flex flex-col justify-end items-center h-full min-h-[400px]">
+                    <div class="w-full flex justify-between items-center mb-4">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-semibold">SMS/Notification Format
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white w-72 h-[450px] rounded-3xl shadow-xl border-8 border-slate-900 flex flex-col overflow-hidden relative">
+                        <div
+                            class="bg-gray-100 py-2 px-4 text-center text-xs font-medium text-gray-500 border-b border-gray-200">
+                            Messages</div>
+                        <div class="flex-1 bg-[#F8F9FA] p-4 flex flex-col space-y-4 overflow-y-auto"
+                            id="sms-chat-container">
+                            <div class="text-[10px] text-center text-gray-400 mt-auto">Today 9:41 AM</div>
+
+                            <div class="bg-gray-200 text-gray-800 p-3 rounded-2xl rounded-bl-sm text-sm self-start max-w-[80%]"
+                                contenteditable="true">
+                                Hi, did the proposal come through?
+                            </div>
+
+                            <div class="bg-[#0F172A] text-white p-3 rounded-2xl rounded-br-sm text-sm self-end max-w-[85%] shadow-sm"
+                                contenteditable="true">
+                                <div><span class="font-bold text-[#06B6D4]">VZiP:</span> Yes, we received it! Our
+                                    consulting team is reviewing the SOW now. We will follow up via email by EOD.
+                                    &#128640;</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-100 p-3 border-t border-gray-200 flex items-center">
+                            <div class="w-full bg-white border border-gray-300 rounded-full px-4 py-1 text-xs text-gray-400 text-center italic"
+                                contenteditable="true">Click bubbles to edit</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AGENDA SECTION (EDITABLE) -->
+            <div id="agenda-preview"
+                class="tab-content hide bg-white p-8 sm:p-12 shadow-md max-w-4xl mx-auto rounded border border-gray-200">
+                <div class="border-l-4 border-[#06B6D4] pl-5 mb-10">
+                    <h3 id="agenda-title" class="text-3xl font-black tracking-tight brand-font text-slate-900 mb-2"
+                        contenteditable="true">Project Kickoff Sync</h3>
+                    <p class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-1">Objective</p>
+                    <p id="agenda-goal" class="text-gray-600" contenteditable="true">Align on milestones, review initial
+                        technical requirements, and establish communication channels.</p>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#0F172A] text-white">
+                            <tr>
+                                <th class="py-3 px-6 font-semibold w-24">Time</th>
+                                <th class="py-3 px-6 font-semibold">Discussion Topic</th>
+                                <th class="py-3 px-6 font-semibold w-48">Owner</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agenda-tbody"
+                            class="text-gray-700 divide-y divide-gray-200 transition-opacity duration-500">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-6 font-mono text-xs text-gray-500" contenteditable="true">00:00</td>
+                                <td class="py-4 px-6 font-medium text-slate-900" contenteditable="true">Introductions &
+                                    Icebreaker</td>
+                                <td class="py-4 px-6 flex items-center gap-2" contenteditable="true">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-[#06B6D4] text-slate-900 flex items-center justify-center text-[10px] font-bold">
+                                        PM</div> Project Manager
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-6 font-mono text-xs text-gray-500" contenteditable="true">00:15</td>
+                                <td class="py-4 px-6 font-medium text-slate-900" contenteditable="true">Technical
+                                    Architecture Review</td>
+                                <td class="py-4 px-6 flex items-center gap-2" contenteditable="true">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold">
+                                        TL</div> Tech Lead
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="print:hidden flex justify-start mt-2">
+                    <button id="btn-add-agenda-row"
+                        class="text-[10px] font-bold text-[#06B6D4] hover:text-cyan-600 transition-colors uppercase tracking-widest flex items-center gap-1 bg-cyan-50 px-2 py-1 rounded cursor-pointer">
+                        + Add Agenda Item
+                    </button>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast z-50">Copied to clipboard!</div>
+
+    <script>
+        const showToast = (message) => {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        };
+
+        const copyToClipboard = (text, successMessage) => {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast(successMessage);
+                } else {
+                    showToast("Failed to copy to clipboard.");
+                }
+            } catch (err) {
+                showToast("Error copying to clipboard.");
+            }
+            document.body.removeChild(textArea);
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 3D Background Init ---
+            if (typeof VANTA !== 'undefined') {
+                VANTA.NET({
+                    el: "#bg-canvas",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: true,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x06B6D4,
+                    backgroundColor: 0xF0F4F8,
+                    backgroundAlpha: 0.0, /* allows CSS gradient to show through */
+                    points: 10.00,
+                    maxDistance: 20.00,
+                    spacing: 20.00
+                });
+            }
+
+            // --- 3D Tilt Init ---
+            if (typeof VanillaTilt !== 'undefined') {
+                VanillaTilt.init(document.querySelectorAll(".card-glass, #logo-concepts-card, #social-avatar-card, #social-cover-card"), {
+                    max: 4,
+                    speed: 400,
+                    glare: true,
+                    "max-glare": 0.15,
+                    gyroscope: true
+                });
+            }
+
+            // --- GSAP 3D Animations ---
+            if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+
+                // 3D Reveal for Sections
+                gsap.utils.toArray('section').forEach((section, i) => {
+                    gsap.from(section, {
+                        scrollTrigger: {
+                            trigger: section,
+                            start: "top 85%",
+                            toggleActions: "play none none reverse"
+                        },
+                        duration: 1,
+                        opacity: 0,
+                        y: 50,
+                        rotationX: 10,
+                        transformPerspective: 1000,
+                        transformOrigin: "center top",
+                        ease: "power3.out"
+                    });
+                });
+            }
+
+            // --- Color Copy Logic ---
+            const colorContainers = document.querySelectorAll('.swatch-container');
+            colorContainers.forEach(container => {
+                container.addEventListener('click', () => {
+                    const colorValue = container.getAttribute('data-color');
+                    copyToClipboard(colorValue, colorValue + ' copied to clipboard!');
+                });
+            });
+
+            // --- TAB SWITCHING LOGIC ---
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('tab-active'));
+                    btn.classList.add('tab-active');
+                    const targetId = btn.getAttribute('data-target');
+
+                    tabContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hide');
+                            content.style.display = '';
+                        } else {
+                            content.classList.add('hide');
+                            content.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            const initialTab = document.querySelector('.tab-btn.tab-active');
+            if (initialTab) {
+                initialTab.click();
+            }
+
+            // --- ADD NEW ROWS LOGIC ---
+            // Invoice
+            const btnAddInvoiceRow = document.getElementById('btn-add-invoice-row');
+            const invoiceTbody = document.getElementById('invoice-tbody');
+            if (btnAddInvoiceRow && invoiceTbody) {
+                btnAddInvoiceRow.addEventListener('click', () => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-dashed border-gray-200 hover:bg-gray-50";
+                    tr.innerHTML = `
+                        <td class="py-2.5 pl-2 pr-4 w-1/2 align-top" contenteditable="true">[New Service Description]</td>
+                        <td class="py-2.5 text-center w-1/6 align-top" contenteditable="true">1</td>
+                        <td class="py-2.5 text-right w-1/6 align-top" contenteditable="true">LKR 0.00</td>
+                        <td class="py-2.5 pr-2 text-right text-slate-900 w-1/6 align-top font-semibold" contenteditable="true">LKR 0.00</td>
+                    `;
+                    invoiceTbody.appendChild(tr);
+                });
+            }
+
+            // Proposal
+            const btnAddProposalRow = document.getElementById('btn-add-proposal-row');
+            const propTasksTbody = document.getElementById('prop-tasks-tbody');
+            if (btnAddProposalRow && propTasksTbody) {
+                btnAddProposalRow.addEventListener('click', () => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 border-b border-gray-100 last:border-0";
+                    tr.innerHTML = `
+                        <td class="py-3 px-3" contenteditable="true">[New Task Description]</td>
+                        <td class="py-3 px-3 text-right font-medium text-slate-900" contenteditable="true">Included</td>
+                    `;
+                    propTasksTbody.appendChild(tr);
+                });
+            }
+
+            // Agreement
+            const btnAddClauseRow = document.getElementById('btn-add-clause-row');
+            const agreementClauses = document.getElementById('agreement-clauses');
+            if (btnAddClauseRow && agreementClauses) {
+                btnAddClauseRow.addEventListener('click', () => {
+                    const num = agreementClauses.querySelectorAll('.clause-block').length + 1;
+                    const div = document.createElement('div');
+                    div.className = "clause-block";
+                    div.innerHTML = `
+                        <h3 class="font-bold text-slate-900 text-base mt-8" contenteditable="true">${num}. [Clause Title]</h3>
+                        <p class="mt-2" contenteditable="true">[Type clause details here...]</p>
+                    `;
+                    agreementClauses.appendChild(div);
+                });
+            }
+
+            // Agenda
+            const btnAddAgendaRow = document.getElementById('btn-add-agenda-row');
+            const agendaTbody = document.getElementById('agenda-tbody');
+            if (btnAddAgendaRow && agendaTbody) {
+                btnAddAgendaRow.addEventListener('click', () => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-4 px-6 font-mono text-xs text-gray-500" contenteditable="true">00:00</td>
+                        <td class="py-4 px-6 font-medium text-slate-900" contenteditable="true">[New Topic]</td>
+                        <td class="py-4 px-6 flex items-center gap-2" contenteditable="true">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 text-slate-900 flex items-center justify-center text-[10px] font-bold">XX</div> 
+                            [Owner Name]
+                        </td>
+                    `;
+                    agendaTbody.appendChild(tr);
+                });
+            }
+
+            // --- PDF Export Logic ---
+            const downloadPDF = (elementId, filename) => {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                const currentScrollY = window.scrollY;
+                window.scrollTo(0, 0);
+
+                const hideElements = element.querySelectorAll('.print\\:hidden');
+                hideElements.forEach(el => el.style.display = 'none');
+
+                const isDarkMode = element.classList.contains('bg-[#0F172A]') || element.classList.contains('bg-slate-900');
+                const originalBg = element.style.backgroundColor;
+                element.style.backgroundColor = isDarkMode ? '#0F172A' : '#ffffff';
+
+                const opt = {
+                    margin: [0.5, 0.5, 0.5, 0.5],
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        scrollY: 0,
+                        scrollX: 0
+                    },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(element).save().then(() => {
+                    hideElements.forEach(el => el.style.display = '');
+                    element.style.backgroundColor = originalBg;
+                    window.scrollTo(0, currentScrollY);
+                    showToast(`${filename} Exported successfully! 📥`);
+                }).catch(err => {
+                    console.warn("PDF Export Error: ", err);
+                    showToast("Error exporting PDF. Please try again.");
+                    hideElements.forEach(el => el.style.display = '');
+                    element.style.backgroundColor = originalBg;
+                    window.scrollTo(0, currentScrollY);
+                });
+            };
+
+            const handlePdfExport = () => {
+                const activeTabBtn = document.querySelector('.tab-btn.tab-active');
+                if (!activeTabBtn) return;
+
+                const targetId = activeTabBtn.getAttribute('data-target');
+                const title = activeTabBtn.textContent.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const filename = `VZiP_${title}.pdf`;
+
+                downloadPDF(targetId, filename);
+            };
+
+            const btnExportDocPdf = document.getElementById('btn-export-doc-pdf');
+            if (btnExportDocPdf) {
+                btnExportDocPdf.addEventListener('click', handlePdfExport);
+            }
+
+            const btnFabExportPdf = document.getElementById('fab-export-pdf');
+            if (btnFabExportPdf) {
+                btnFabExportPdf.addEventListener('click', handlePdfExport);
+            }
+
+            // --- PNG Export Logic for Logos ---
+            const btnDownloadLogos = document.getElementById('btn-download-logos');
+            const logoConceptsCard = document.getElementById('logo-concepts-card');
+
+            if (btnDownloadLogos && logoConceptsCard) {
+                btnDownloadLogos.addEventListener('click', () => {
+                    const originalText = btnDownloadLogos.innerHTML;
+                    btnDownloadLogos.innerHTML = '⏳...';
+                    btnDownloadLogos.style.display = 'none';
+
+                    document.fonts.ready.then(() => {
+                        html2canvas(logoConceptsCard, {
+                            backgroundColor: '#0F172A',
+                            scale: 4,
+                            useCORS: true,
+                            logging: false
+                        }).then(canvas => {
+                            btnDownloadLogos.style.display = '';
+                            btnDownloadLogos.innerHTML = originalText;
+
+                            const link = document.createElement('a');
+                            link.download = 'VZiP_Logo_Concepts.png';
+                            link.href = canvas.toDataURL('image/png', 1.0);
+                            link.click();
+                            showToast("Logos downloaded! 📥");
+                        }).catch(err => {
+                            console.warn("Error downloading image", err);
+                            btnDownloadLogos.style.display = '';
+                            btnDownloadLogos.innerHTML = originalText;
+                            showToast("Error downloading image. Please try again.");
+                        });
+                    });
+                });
+            }
+
+            // --- PNG Export Logic for Social Avatar ---
+            const btnDownloadAvatar = document.getElementById('btn-download-avatar');
+            const socialAvatarCard = document.getElementById('social-avatar-card');
+
+            if (btnDownloadAvatar && socialAvatarCard) {
+                btnDownloadAvatar.addEventListener('click', () => {
+                    const originalText = btnDownloadAvatar.innerHTML;
+                    btnDownloadAvatar.innerHTML = '⏳...';
+
+                    document.fonts.ready.then(() => {
+                        html2canvas(socialAvatarCard, {
+                            backgroundColor: null,
+                            scale: 4,
+                            useCORS: true,
+                            logging: false
+                        }).then(canvas => {
+                            btnDownloadAvatar.innerHTML = originalText;
+                            const link = document.createElement('a');
+                            link.download = 'VZiP_Social_Avatar.png';
+                            link.href = canvas.toDataURL('image/png', 1.0);
+                            link.click();
+                            showToast("Avatar downloaded! 📥");
+                        }).catch(err => {
+                            console.warn("Avatar Export Error: ", err);
+                            btnDownloadAvatar.innerHTML = originalText;
+                            showToast("Error downloading image.");
+                        });
+                    });
+                });
+            }
+
+            // --- PNG Export Logic for Social Cover ---
+            const btnDownloadCover = document.getElementById('btn-download-cover');
+            const socialCoverCard = document.getElementById('social-cover-card');
+
+            if (btnDownloadCover && socialCoverCard) {
+                btnDownloadCover.addEventListener('click', () => {
+                    const originalText = btnDownloadCover.innerHTML;
+                    btnDownloadCover.innerHTML = '⏳...';
+
+                    document.fonts.ready.then(() => {
+                        html2canvas(socialCoverCard, {
+                            backgroundColor: '#0F172A',
+                            scale: 4,
+                            useCORS: true,
+                            logging: false
+                        }).then(canvas => {
+                            btnDownloadCover.innerHTML = originalText;
+                            const link = document.createElement('a');
+                            link.download = 'VZiP_Social_Cover.png';
+                            link.href = canvas.toDataURL('image/png', 1.0);
+                            link.click();
+                            showToast("Cover banner downloaded! 📥");
+                        }).catch(err => {
+                            console.warn("Cover Export Error: ", err);
+                            btnDownloadCover.innerHTML = originalText;
+                            showToast("Error downloading image.");
+                        });
+                    });
+                });
+            }
+
+            // --- Initialize Static Portfolio Chart ---
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Software Dev', 'Web Dev', 'Consulting'],
+                    datasets: [{
+                        data: [45, 35, 20],
+                        backgroundColor: [
+                            '#0F172A',
+                            '#06B6D4',
+                            '#64748B'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 14
+                                },
+                                color: '#475569',
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: "'Space Grotesk', sans-serif", size: 14 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 14 },
+                            padding: 12,
+                            cornerRadius: 4,
+                            callbacks: {
+                                label: function (context) {
+                                    return ' ' + context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
